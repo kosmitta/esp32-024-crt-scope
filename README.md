@@ -6,7 +6,8 @@ Cheap-Yellow-Display family boards (ESP32 + ST7789 240x320 + XPT2046 resistive t
 > **Came here from a search like “ESP32-024 XPT2046 touch not working”, “XPT2046 MISO always 0”
 > or “CYD 2.4 touch dead on shared SPI”?** Skip straight to
 > [The touch problem and the verified workaround](#-the-touch-problem-and-the-verified-workaround) —
-> that is very likely your problem, and the fix is one line.
+> that is very likely your problem. The verified workaround is documented there;
+> it includes the HSPI configuration and correct chip-select handling.
 
 ![scope](https://img.shields.io/badge/display-ST7789_240x320-green) ![touch](https://img.shields.io/badge/touch-XPT2046_shared_HSPI-orange) ![license](https://img.shields.io/badge/license-MIT-blue)
 
@@ -69,7 +70,8 @@ Two more board-specific must-knows:
 | PENIRQ (GPIO 36) reacting to touch while bus quiet | chip alive — the controller works |
 | **Same pins, `SPIClass bus(HSPI)` + CS discipline (LCD/SD HIGH) + the sequence below** | **touch works instantly, stable coordinates** |
 
-If your board shows the first row's symptom, the fix costs one line.
+If your board shows the first row's symptom, the verified workaround is documented
+below — it includes the HSPI configuration and correct chip-select handling.
 
 ## ⚠️ Probe input safety
 

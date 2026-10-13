@@ -6,8 +6,9 @@
 
 // ===== OSC-32 — finalny, wszystko na HSPI (jak CheshirCa/ESP32-024) =====
 // TZT L1435 2.4" / ESP32-024: ST7789 + XPT2046 na HSPI 12/13/14,
-// CS lcd=15, DC=2, BL=27, touch CS=33, IRQ=36, SD_CS=5 (odznaczony).
-// Kolory panelu zanegowane -> INV() w software. Fosfor 4bpp: wlasny bufor.
+// CS lcd=15, DC=2, BL=27, touch CS=33, IRQ=36, SD_CS=5 (trzymany HIGH przy dotyku).
+// Kolory: panel startuje z inwersja (INVON); setup() wysyla INVOFF
+// (tft.invertDisplay(false)) — uzywamy zwyklych kolorow RGB565. Fosfor 4bpp: wlasny bufor.
 
 #define PROBE_PIN 34
 #define DISP_CS   15
@@ -29,10 +30,8 @@ Adafruit_ST7789 tft(&displaySpi, DISP_CS, DISP_DC, -1);
 Preferences prefs;
 
 #define RGB565(r, g, b) ((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | ((b) >> 3))
-// Adafruit_ST7789 sam inicjalizuje inwersje panelu — software'owe negowanie zbędne
-#define INV(c) ((uint16_t)(c))
 
-// paleta fosforowa (wartosci logiczne; przy push nastepuje INV)
+// paleta fosforowa (zwykle kolory RGB565 — panel z INVOFF)
 static const uint16_t PAL[16] = {
   RGB565(0, 0, 0), RGB565(0, 30, 6), RGB565(0, 70, 15), RGB565(0, 140, 30),
   RGB565(0, 225, 45), RGB565(185, 255, 185), 0, 0,
@@ -45,14 +44,12 @@ enum { I_BG = 0, I_P1, I_P2, I_P3, I_GLOW, I_CORE, I_SP6, I_SP7, I_GRID, I_GRIDC
 static uint8_t phos[(W * WAVE_H) / 2];
 static uint16_t line16[W];
 
-#define TFT_BLACK 0x0000
-#define TFT_GREEN 0x07E0
-const uint16_t SCR_BG    = INV(TFT_BLACK);
-const uint16_t SCR_TXT   = INV(TFT_GREEN);
-const uint16_t SCR_TXTD  = INV(RGB565(0, 150, 0));
-const uint16_t SCR_AMBER = INV(RGB565(255, 170, 0));
-const uint16_t SCR_DIM   = INV(RGB565(0, 120, 0));
-const uint16_t SCR_SEL   = INV(RGB565(0, 45, 0));
+const uint16_t SCR_BG    = 0x0000;               // czarny
+const uint16_t SCR_TXT   = 0x07E0;               // zielony
+const uint16_t SCR_TXTD  = RGB565(0, 150, 0);
+const uint16_t SCR_AMBER = RGB565(255, 170, 0);
+const uint16_t SCR_DIM   = RGB565(0, 120, 0);
+const uint16_t SCR_SEL   = RGB565(0, 45, 0);
 
 static const uint32_t TB_DELAY[4] = {0, 50, 200, 800};
 static const char *TB_NAME[4] = {"1x", "2x", "5x", "10x"};
@@ -266,12 +263,12 @@ static void drawTrace() {
   }
 }
 
-static void phPush() {                    // konwersja 4bpp -> RGB565 (z INV) linia po linii
+static void phPush() {                    // konwersja 4bpp -> RGB565, linia po linii
   tft.startWrite();
   for (int y = 0; y < WAVE_H; y++) {
     const uint8_t *row = &phos[(y * W) >> 1];
     for (int x = 0; x < W; x++)
-      line16[x] = INV(PAL[(x & 1) ? (row[x >> 1] & 0x0F) : (row[x >> 1] >> 4)]);
+      line16[x] = PAL[(x & 1) ? (row[x >> 1] & 0x0F) : (row[x >> 1] >> 4)];
     tft.setAddrWindow(0, TOP_H + y, W, 1);
     tft.writePixels(line16, W);
   }
